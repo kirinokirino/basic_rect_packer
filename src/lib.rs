@@ -1,5 +1,3 @@
-use std::cmp::Ordering;
-
 use glam::UVec2;
 use glam_rect::URect;
 
@@ -35,15 +33,7 @@ impl Packer {
         if sizes.is_empty() {
             return Vec::new();
         }
-        sizes.sort_unstable_by(|a, b| {
-            if a.y == b.y {
-                Ordering::Equal
-            } else if a.y > b.y {
-                Ordering::Greater
-            } else {
-                Ordering::Less
-            }
-        });
+        sizes.sort_unstable_by(|a, b| a.y.cmp(&b.y));
         let padding = 2;
         let smallest = sizes.first().unwrap();
         // if we can't place even the smallest item there, space can be wasted.
@@ -51,10 +41,7 @@ impl Packer {
         sizes
             .into_iter()
             .rev()
-            .map(|size| {
-                let result = self.try_allocate(size);
-                result
-            })
+            .map(|size| self.try_allocate(size))
             .collect()
     }
 

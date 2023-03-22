@@ -7,7 +7,7 @@ use speedy2d::{Graphics2D, Window};
 static SIZE: (u8, u8) = (128, 128);
 static SCALE: f32 = 5.0;
 
-use basic_packer::Packer;
+use basic_rect_packer::Packer;
 
 fn main() {
     let window = Window::new_centered(
@@ -113,7 +113,7 @@ impl WindowHandler for MyWindowHandler {
         &mut self,
         helper: &mut WindowHelper<()>,
         virtual_key_code: Option<speedy2d::window::VirtualKeyCode>,
-        scancode: speedy2d::window::KeyScancode,
+        _scancode: speedy2d::window::KeyScancode,
     ) {
         if let Some(key_code) = virtual_key_code {
             match key_code {
