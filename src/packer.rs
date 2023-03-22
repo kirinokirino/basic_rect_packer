@@ -1,6 +1,8 @@
 use glam::UVec2;
 use glam_rect::URect;
 
+static ADMISSIBLE_WASTE: u8 = 8;
+
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
 pub(crate) enum TexturePackerError {
     NotEnoughSpace,
@@ -25,14 +27,12 @@ impl TexturePacker {
             return Ok(URect::new(UVec2::ZERO, size));
         }
 
-        let size = size + UVec2::new(2, 2);
-
-        // Add a one-pixel border around each texture
-        let width = size.x;
-        let height = size.y;
-
         let mut best_area: Option<&mut URect> = None;
 
+        // Add a one-pixel border around each texture
+        let size = size + UVec2::new(2, 2);
+        let width = size.x;
+        let height = size.y;
         for area in &mut self.areas {
             let area_width = area.width();
             let area_height = area.height();
@@ -58,8 +58,13 @@ impl TexturePacker {
             bottom_right,
         } = best_area.clone();
 
-        let space_underneath =
-            URect::new(UVec2::new(top_left.x, (top_left + size).y), bottom_right);
+        let new_height = (top_left + size).y;
+        let new_height = if (bottom_right.y - new_height) > ADMISSIBLE_WASTE.into() {
+            new_height
+        } else {
+            bottom_right.y
+        };
+        let space_underneath = URect::new(UVec2::new(top_left.x, new_height), bottom_right);
 
         let space_right = URect::new(
             UVec2::new((top_left + size).x, top_left.y),
