@@ -50,6 +50,21 @@ impl MyWindowHandler {
         }
         self.step += 1;
     }
+
+    pub fn apply_bunch(&mut self) {
+        let steps = 50;
+        let mut allocations = Vec::with_capacity(50);
+        for _ in 0..steps {
+            allocations.push(UVec2::new(fastrand::u32(2..25), fastrand::u32(2..25)));
+        }
+        self.rects.extend(
+            self.packer
+                .pack(allocations)
+                .into_iter()
+                .filter_map(|result| result.ok()),
+        );
+        self.step += steps;
+    }
 }
 
 impl WindowHandler for MyWindowHandler {
@@ -104,6 +119,7 @@ impl WindowHandler for MyWindowHandler {
         if let Some(key_code) = virtual_key_code {
             match key_code {
                 VirtualKeyCode::Space => self.apply_step(),
+                VirtualKeyCode::Key2 => self.apply_bunch(),
                 VirtualKeyCode::Escape => helper.terminate_loop(),
                 VirtualKeyCode::Key1 => self.reset(),
                 _ => (),

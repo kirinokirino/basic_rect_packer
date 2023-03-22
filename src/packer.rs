@@ -1,28 +1,58 @@
+use std::cmp::Ordering;
+
 use glam::UVec2;
 use glam_rect::URect;
 
-static ADMISSIBLE_WASTE: u8 = 8;
+static DEFAULT_ADMISSIBLE_WASTE: u8 = 8;
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
-pub(crate) enum TexturePackerError {
+pub enum TexturePackerError {
     NotEnoughSpace,
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct TexturePacker {
+pub struct TexturePacker {
     pub areas: Vec<URect>,
+    pub admissable_waste: u32,
 }
 
 impl TexturePacker {
-    pub(crate) fn new(width: u32, height: u32) -> Self {
+    pub fn new(width: u32, height: u32) -> Self {
         let top_left = UVec2::new(0, 0);
         let bottom_right = UVec2::new(width, height);
         TexturePacker {
             areas: vec![URect::new(top_left, bottom_right)],
+            admissable_waste: DEFAULT_ADMISSIBLE_WASTE.into(),
         }
     }
 
-    pub(crate) fn try_allocate(&mut self, size: UVec2) -> Result<URect, TexturePackerError> {
+    pub fn pack(&mut self, mut sizes: Vec<UVec2>) -> Vec<Result<URect, TexturePackerError>> {
+        if sizes.is_empty() {
+            return Vec::new();
+        }
+        sizes.sort_unstable_by(|a, b| {
+            if a.y == b.y {
+                Ordering::Equal
+            } else if a.y > b.y {
+                Ordering::Greater
+            } else {
+                Ordering::Less
+            }
+        });
+        let padding = 2;
+        let smallest = sizes.first().unwrap();
+        self.admissable_waste = smallest.y - 1 + padding;
+        sizes
+            .into_iter()
+            .rev()
+            .map(|size| {
+                let result = self.try_allocate(size);
+                result
+            })
+            .collect()
+    }
+
+    pub fn try_allocate(&mut self, size: UVec2) -> Result<URect, TexturePackerError> {
         if size.x == 0 || size.y == 0 {
             return Ok(URect::new(UVec2::ZERO, size));
         }
@@ -59,7 +89,7 @@ impl TexturePacker {
         } = best_area.clone();
 
         let new_height = (top_left + size).y;
-        let new_height = if (bottom_right.y - new_height) > ADMISSIBLE_WASTE.into() {
+        let new_height = if (bottom_right.y - new_height) > self.admissable_waste {
             new_height
         } else {
             bottom_right.y
