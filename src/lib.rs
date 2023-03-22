@@ -6,27 +6,32 @@ use glam_rect::URect;
 static DEFAULT_ADMISSIBLE_WASTE: u8 = 8;
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
-pub enum TexturePackerError {
+pub enum PackerError {
     NotEnoughSpace,
 }
 
 #[derive(Debug, Clone)]
-pub struct TexturePacker {
+pub struct Packer {
     pub areas: Vec<URect>,
     pub admissable_waste: u32,
 }
 
-impl TexturePacker {
+impl Packer {
     pub fn new(width: u32, height: u32) -> Self {
         let top_left = UVec2::new(0, 0);
         let bottom_right = UVec2::new(width, height);
-        TexturePacker {
+        Packer {
             areas: vec![URect::new(top_left, bottom_right)],
             admissable_waste: DEFAULT_ADMISSIBLE_WASTE.into(),
         }
     }
 
-    pub fn pack(&mut self, mut sizes: Vec<UVec2>) -> Vec<Result<URect, TexturePackerError>> {
+    pub fn with_admissable_waste(mut self, waste: u32) -> Self {
+        self.admissable_waste = waste;
+        self
+    }
+
+    pub fn pack(&mut self, mut sizes: Vec<UVec2>) -> Vec<Result<URect, PackerError>> {
         if sizes.is_empty() {
             return Vec::new();
         }
@@ -41,6 +46,7 @@ impl TexturePacker {
         });
         let padding = 2;
         let smallest = sizes.first().unwrap();
+        // if we can't place even the smallest item there, space can be wasted.
         self.admissable_waste = smallest.y - 1 + padding;
         sizes
             .into_iter()
@@ -52,7 +58,7 @@ impl TexturePacker {
             .collect()
     }
 
-    pub fn try_allocate(&mut self, size: UVec2) -> Result<URect, TexturePackerError> {
+    pub fn try_allocate(&mut self, size: UVec2) -> Result<URect, PackerError> {
         if size.x == 0 || size.y == 0 {
             return Ok(URect::new(UVec2::ZERO, size));
         }
@@ -82,7 +88,7 @@ impl TexturePacker {
             }
         }
 
-        let best_area = best_area.ok_or(TexturePackerError::NotEnoughSpace)?;
+        let best_area = best_area.ok_or(PackerError::NotEnoughSpace)?;
         let URect {
             top_left,
             bottom_right,
@@ -125,7 +131,7 @@ mod test {
 
     #[test]
     fn pack_test_fill_four_squares() {
-        let mut packer = TexturePacker::new(64, 64);
+        let mut packer = Packer::new(64, 64);
 
         assert_eq!(
             Ok(URect::from_tuples((1, 1), (31, 31))),
@@ -148,14 +154,14 @@ mod test {
         );
 
         assert_eq!(
-            Err(TexturePackerError::NotEnoughSpace),
+            Err(PackerError::NotEnoughSpace),
             packer.try_allocate(UVec2::new(30, 30))
         );
     }
 
     #[test]
     fn pack_test_nonfill_four_squares() {
-        let mut packer = TexturePacker::new(64, 64);
+        let mut packer = Packer::new(64, 64);
 
         assert_eq!(
             Ok(URect::from_tuples((1, 1), (29, 29))),
@@ -178,14 +184,14 @@ mod test {
         );
 
         assert_eq!(
-            Err(TexturePackerError::NotEnoughSpace),
+            Err(PackerError::NotEnoughSpace),
             packer.try_allocate(UVec2::new(30, 30))
         );
     }
 
     #[test]
     fn pack_test_uneven_squares() {
-        let mut packer = TexturePacker::new(64, 64);
+        let mut packer = Packer::new(64, 64);
 
         assert_eq!(
             Ok(URect::from_tuples((1, 1), (15, 15))),

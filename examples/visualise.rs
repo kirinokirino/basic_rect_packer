@@ -7,8 +7,7 @@ use speedy2d::{Graphics2D, Window};
 static SIZE: (u8, u8) = (128, 128);
 static SCALE: f32 = 5.0;
 
-mod packer;
-use packer::TexturePacker;
+use basic_packer::Packer;
 
 fn main() {
     let window = Window::new_centered(
@@ -24,13 +23,13 @@ fn main() {
 
 struct MyWindowHandler {
     rects: Vec<URect>,
-    packer: TexturePacker,
+    packer: Packer,
     step: usize,
 }
 
 impl MyWindowHandler {
     fn new() -> Self {
-        let packer = TexturePacker::new(SIZE.0 as u32, SIZE.1 as u32);
+        let packer = Packer::new(SIZE.0 as u32, SIZE.1 as u32);
         Self {
             rects: Vec::new(),
             packer,
@@ -39,7 +38,7 @@ impl MyWindowHandler {
     }
 
     pub fn reset(&mut self) {
-        self.packer = TexturePacker::new(SIZE.0 as u32, SIZE.1 as u32);
+        self.packer = Packer::new(SIZE.0 as u32, SIZE.1 as u32);
         self.rects.clear();
     }
 

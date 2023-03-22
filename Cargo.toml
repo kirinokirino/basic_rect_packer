@@ -1,12 +1,14 @@
 [package]
-name = "texture_packer_visualization"
+name = "basic_rect_packer"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-speedy2d = { version = "1.13.1", path = "../kirinokirino/Speedy2D" }
 glam = "0.23.0"
 glam_rect = { version = "0.1.0", path = "../glam_rect" }  
+
+[dev-dependencies]
+speedy2d = { version = "1.13.1", path = "../kirinokirino/Speedy2D" }
 fastrand = "1.9.0"
