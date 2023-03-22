@@ -69,8 +69,7 @@ impl WindowHandler for MyWindowHandler {
             ),
             Color::from_gray(0.8),
         );
-        for (i, free_area) in self.packer.clone().areas.into_iter().enumerate() {
-            let FreeRegion { rect } = free_area;
+        for (i, rect) in self.packer.clone().areas.into_iter().enumerate() {
             graphics.draw_rectangle(
                 Rect::new(
                     rect.top_left.as_vec2() * scale,
@@ -126,23 +125,6 @@ impl WindowHandler for MyWindowHandler {
 
 use glam::{UVec2, Vec2};
 
-#[derive(Debug, Clone)]
-struct FreeRegion {
-    rect: URect,
-}
-
-impl FreeRegion {
-    #[inline]
-    fn from_rectangle(rect: URect) -> Self {
-        FreeRegion { rect }
-    }
-
-    #[inline]
-    fn new(width: u32, height: u32) -> Self {
-        FreeRegion::from_rectangle(URect::new(UVec2::ZERO, UVec2::new(width, height)))
-    }
-}
-
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
 pub(crate) enum TexturePackerError {
     NotEnoughSpace,
@@ -150,13 +132,15 @@ pub(crate) enum TexturePackerError {
 
 #[derive(Debug, Clone)]
 pub(crate) struct TexturePacker {
-    areas: Vec<FreeRegion>,
+    areas: Vec<URect>,
 }
 
 impl TexturePacker {
     pub(crate) fn new(width: u32, height: u32) -> Self {
+        let top_left = UVec2::new(0, 0);
+        let bottom_right = UVec2::new(width, height);
         TexturePacker {
-            areas: vec![FreeRegion::new(width, height)],
+            areas: vec![URect::new(top_left, bottom_right)],
         }
     }
 
@@ -171,18 +155,18 @@ impl TexturePacker {
         let width = size.x;
         let height = size.y;
 
-        let mut best_area: Option<&mut FreeRegion> = None;
+        let mut best_area: Option<&mut URect> = None;
 
         for area in &mut self.areas {
-            let area_width = area.rect.width();
-            let area_height = area.rect.height();
+            let area_width = area.width();
+            let area_height = area.height();
 
-            if width > area.rect.width() || height > area.rect.height() {
+            if width > area.width() || height > area.height() {
                 continue;
             }
 
             let update_best = if let Some(current_best) = &best_area {
-                current_best.rect.width() >= area_width && current_best.rect.height() >= area_height
+                current_best.width() >= area_width && current_best.height() >= area_height
             } else {
                 true
             };
@@ -196,7 +180,7 @@ impl TexturePacker {
         let URect {
             top_left,
             bottom_right,
-        } = best_area.rect;
+        } = best_area.clone();
 
         let space_underneath =
             URect::new(UVec2::new(top_left.x, (top_left + size).y), bottom_right);
@@ -207,13 +191,12 @@ impl TexturePacker {
         );
 
         if space_right.is_zero_area() {
-            best_area.rect = space_underneath
+            *best_area = space_underneath
         } else {
-            best_area.rect = space_right;
+            *best_area = space_right;
 
             if !space_underneath.is_zero_area() {
-                self.areas
-                    .push(FreeRegion::from_rectangle(space_underneath));
+                self.areas.push(space_underneath);
             }
         }
 
