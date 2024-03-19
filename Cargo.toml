@@ -7,8 +7,8 @@ edition = "2021"
 
 [dependencies]
 glam = "0.23.0"
-glam_rect = { version = "0.1.0", path = "../glam_rect" }  
+glam_rect = { version = "0.1.0", git = "https://github.com/kirinokirino/glam_rect.git" }  
 
 [dev-dependencies]
-speedy2d = { version = "1.13.1", path = "../kirinokirino/Speedy2D" }
+speedy2d = { version = "1.13.1", git = "https://github.com/kirinokirino/speedy2d.git" }
 fastrand = "1.9.0"
